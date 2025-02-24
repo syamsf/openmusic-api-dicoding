@@ -15,8 +15,8 @@ class AlbumsService {
     const createdAt = new Date().toISOString();
 
     const query = {
-      text: 'INSERT INTO albums VALUES($1, $2, $3, $4, $5) RETURNING id',
-      values: [id, name, year, createdAt, createdAt],
+      text: 'INSERT INTO albums VALUES($1, $2, $3, $4, $4) RETURNING id',
+      values: [id, name, year, createdAt],
     };
 
     const result = await this._pool.query(query);
@@ -61,7 +61,7 @@ class AlbumsService {
     };
 
     const result = await this._pool.query(query);
-    if (!result.rows.length) {
+    if (!result.rowCount) {
       throw new NotFoundError('Album is not found.');
     }
 
@@ -74,7 +74,7 @@ class AlbumsService {
     )).filter((item) => item.id !== null);
 
     return {
-      ...result.rows.map(mapDBToAlbumsModel)[0],
+      ...mapDBToAlbumsModel(result.rows[0]),
       songs,
     };
   }
@@ -88,7 +88,7 @@ class AlbumsService {
 
     const result = await this._pool.query(query);
 
-    if (!result.rows.length) {
+    if (!result.rowCount) {
       throw new NotFoundError('Failed to update album. Id is not found.');
     }
   }
@@ -101,7 +101,7 @@ class AlbumsService {
 
     const result = await this._pool.query(query);
 
-    if (!result.rows.length) {
+    if (!result.rowCount) {
       throw new NotFoundError('Failed to delete album. Id is not found.');
     }
   }

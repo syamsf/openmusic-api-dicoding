@@ -4,36 +4,23 @@
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable('songs', {
+  pgm.createTable('users', {
     id: {
       type: 'VARCHAR(50)',
       primaryKey: true,
     },
-    title: {
+    username: {
+      type: 'VARCHAR(50)',
+      unique: true,
+      notNull: true,
+    },
+    password: {
       type: 'TEXT',
       notNull: true,
     },
-    year: {
-      type: 'INTEGER',
-      notNull: true,
-    },
-    genre: {
+    fullname: {
       type: 'TEXT',
       notNull: true,
-    },
-    performer: {
-      type: 'TEXT',
-      notNull: true,
-    },
-    duration: {
-      type: 'INTEGER',
-      notNull: false,
-    },
-    album_id: {
-      type: 'TEXT',
-      notNull: false,
-      references: '"albums"("id")',
-      onDelete: 'set null',
     },
     created_at: {
       type: 'TEXT',
@@ -52,5 +39,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable('songs');
+  pgm.dropTable('users');
 };
