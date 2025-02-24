@@ -4,42 +4,34 @@
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable('songs', {
+  pgm.createTable('playlist_song_activities', {
     id: {
-      type: 'VARCHAR(50)',
+      type: 'VARCHAR(100)',
       primaryKey: true,
     },
-    title: {
-      type: 'TEXT',
+    playlist_id: {
+      type: 'VARCHAR(50)',
+      notNull: true,
+      references: '"playlist"("id")',
+      onDelete: 'cascade',
+    },
+    song_id: {
+      type: 'VARCHAR(50)',
+      notNull: true,
+      references: '"songs"("id")',
+      onDelete: 'cascade',
+    },
+    user_id: {
+      type: 'VARCHAR(50)',
+      notNull: true,
+      references: '"users"("id")',
+      onDelete: 'cascade',
+    },
+    action: {
+      type: 'VARCHAR(50)',
       notNull: true,
     },
-    year: {
-      type: 'INTEGER',
-      notNull: true,
-    },
-    genre: {
-      type: 'TEXT',
-      notNull: true,
-    },
-    performer: {
-      type: 'TEXT',
-      notNull: true,
-    },
-    duration: {
-      type: 'INTEGER',
-      notNull: false,
-    },
-    album_id: {
-      type: 'TEXT',
-      notNull: false,
-      references: '"albums"("id")',
-      onDelete: 'set null',
-    },
-    created_at: {
-      type: 'TEXT',
-      notNull: true,
-    },
-    updated_at: {
+    time: {
       type: 'TEXT',
       notNull: true,
     },
@@ -52,5 +44,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable('songs');
+  pgm.dropTable('playlist_song_activities');
 };
