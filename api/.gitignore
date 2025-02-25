@@ -1,0 +1,8 @@
+../.idea
+.vscode
+.env
+.env.production
+package-lock.json
+*.pem
+node_modules
+src/api/uploads/file
