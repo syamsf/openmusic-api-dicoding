@@ -4,8 +4,9 @@ const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
 
 class CollaborationService {
-  constructor() {
+  constructor(cacheService) {
     this._pool = new Pool();
+    this._cacheService = cacheService;
   }
 
   async createCollaboration({ playlistId, userId }) {
@@ -21,6 +22,9 @@ class CollaborationService {
       throw new InvariantError('Failed to add collaborator.');
     }
 
+    await this._cacheService.delete(`playlistByOwner:${userId}`);
+    await this._cacheService.delete(`playlistSongs:${playlistId}`);
+
     return result.rows[0].id;
   }
 
@@ -35,6 +39,9 @@ class CollaborationService {
     if (!result.rowCount) {
       throw new NotFoundError('Failed to delete collaborator. Id is not found.');
     }
+
+    await this._cacheService.delete(`playlistByOwner:${userId}`);
+    await this._cacheService.delete(`playlistSongs:${playlistId}`);
   }
 }
 

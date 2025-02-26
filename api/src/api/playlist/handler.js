@@ -29,17 +29,21 @@ class PlaylistHandler {
     return response;
   }
 
-  async getAllPlaylistsHandler(request) {
+  async getAllPlaylistsHandler(request, h) {
     const { id: credentialId } = request.auth.credentials;
 
     const playlists = await this._service.getPlaylist(credentialId);
 
-    return {
+    const response = h.response({
       status: 'success',
-      data: {
-        playlists,
-      },
-    };
+      data: { playlists: playlists.data },
+    });
+
+    if (playlists.isCached) {
+      response.header('X-Data-Source', 'cache');
+    }
+
+    return response;
   }
 
   async getPlaylistActivitiesHandler(request) {
@@ -60,7 +64,7 @@ class PlaylistHandler {
     const { id: credentialId } = request.auth.credentials;
 
     await this._service.verifyPlaylistOwner(id, credentialId);
-    await this._service.deletePlaylist(id);
+    await this._service.deletePlaylist(id, credentialId);
 
     return {
       status: 'success',

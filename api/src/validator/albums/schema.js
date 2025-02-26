@@ -1,14 +1,16 @@
 const Joi = require('joi');
 
+const currentYear = new Date().getFullYear();
+
 const AlbumPayloadSchema = Joi.object({
   name: Joi.string().required(),
-  year: Joi.number().integer().min(1900).max(3000)
+  year: Joi.number().integer().min(1900).max(currentYear)
     .required(),
 });
 
 const AlbumQuerySchema = Joi.object({
   name: Joi.string().empty(''),
-  year: Joi.number().integer().min(1900).max(3000)
+  year: Joi.number().integer().min(1900).max(currentYear)
     .empty(0),
 });
 

@@ -55,6 +55,9 @@ const StorageService = require('./services/storage/StoragesService');
 const CacheService = require('./services/redis/CacheService');
 
 const init = async () => {
+  const songsService = new SongsService(new CacheService());
+  const playlistService = new PlaylistService(new CacheService());
+
   const server = Hapi.server({
     port: config.app.port,
     host: config.app.host,
@@ -103,7 +106,7 @@ const init = async () => {
     {
       plugin: songsPlugin,
       options: {
-        service: new SongsService(),
+        service: songsService,
         validator: SongsValidator,
         albumService: new AlbumsService(),
       },
@@ -127,7 +130,7 @@ const init = async () => {
     {
       plugin: playlistPlugin,
       options: {
-        service: new PlaylistService(),
+        service: playlistService,
         validator: PlaylistValidator,
         playlistSongActivitiesService: new PlaylistSongActivitiesService(),
       },
@@ -135,19 +138,19 @@ const init = async () => {
     {
       plugin: playlistSongsPlugin,
       options: {
-        service: new PlaylistSongsService(),
+        service: new PlaylistSongsService(new CacheService()),
         validator: PlaylistSongsValidator,
-        songsService: new SongsService(),
-        playlistService: new PlaylistService(),
+        songsService,
+        playlistService,
         playlistSongActivitiesService: new PlaylistSongActivitiesService(),
       },
     },
     {
       plugin: collaborationPlugin,
       options: {
-        service: new CollaborationService(),
+        service: new CollaborationService(new CacheService()),
         validator: CollaborationValidator,
-        playlistService: new PlaylistService(),
+        playlistService,
         usersService: new UsersService(),
       },
     },
@@ -156,7 +159,7 @@ const init = async () => {
       options: {
         service: ProducerService,
         validator: ExportsValidator,
-        playlistService: new PlaylistService(),
+        playlistService,
       },
     },
   ]);

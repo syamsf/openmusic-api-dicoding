@@ -14,7 +14,7 @@ exports.up = (pgm) => {
       notNull: true,
     },
     owner_id: {
-      type: 'VARCHAR(500)',
+      type: 'VARCHAR(50)',
       notNull: true,
       references: '"users"("id")',
       onDelete: 'cascade',

@@ -5,11 +5,19 @@ const NotFoundError = require('../../exceptions/NotFoundError');
 const { mapDBToSongsModel, mapDBToPlaylistModel } = require('../../utils');
 
 class PlaylistSongsService {
-  constructor() {
+  constructor(cacheService) {
     this._pool = new Pool();
+    this._cacheService = cacheService;
   }
 
   async getPlaylistByIdWithSongs(id) {
+    const playlistKey = `playlistSongs:${id}`;
+
+    const cachedData = await this._cacheService.get(playlistKey);
+    if (cachedData !== null) {
+      return { data: JSON.parse(cachedData), isCached: true };
+    }
+
     const query = {
       text: `SELECT 
         t1.*, 
@@ -38,9 +46,22 @@ class PlaylistSongsService {
       })
     )).filter((item) => item.id !== null);
 
+    const expiredIn30Minutes = 30 * 60;
+    await this._cacheService.set(
+      playlistKey,
+      JSON.stringify({
+        ...mapDBToPlaylistModel(result.rows[0]),
+        songs,
+      }),
+      expiredIn30Minutes,
+    );
+
     return {
-      ...mapDBToPlaylistModel(result.rows[0]),
-      songs,
+      data: {
+        ...mapDBToPlaylistModel(result.rows[0]),
+        songs,
+      },
+      isCached: false,
     };
   }
 
@@ -56,6 +77,8 @@ class PlaylistSongsService {
     if (!result.rows[0].id) {
       throw new InvariantError('Failed to add song to playlist.');
     }
+
+    await this._cacheService.delete(`playlistSongs:${playlistId}`);
   }
 
   async deleteSongFromPlaylist(playlistId, songId) {
@@ -69,6 +92,8 @@ class PlaylistSongsService {
     if (!result.rowCount) {
       throw new NotFoundError('Failed to delete song from playlist. Id is not found.');
     }
+
+    await this._cacheService.delete(`playlistSongs:${playlistId}`);
   }
 }
 

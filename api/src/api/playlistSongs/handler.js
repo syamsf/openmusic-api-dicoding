@@ -11,19 +11,23 @@ class PlaylistSongsHandler {
     autoBind(this);
   }
 
-  async getAllPlaylistsWithSongsHandler(request) {
+  async getAllPlaylistsWithSongsHandler(request, h) {
     const { id } = request.params;
     const { id: credentialId } = request.auth.credentials;
 
     await this._playlistService.verifyPlaylistOwner(id, credentialId, true);
     const playlist = await this._service.getPlaylistByIdWithSongs(id);
 
-    return {
+    const response = h.response({
       status: 'success',
-      data: {
-        playlist,
-      },
-    };
+      data: { playlist: playlist.data },
+    });
+
+    if (playlist.isCached) {
+      response.header('X-Data-Source', 'cache');
+    }
+
+    return response;
   }
 
   async addSongToPlaylistSongsHandler(request, h) {

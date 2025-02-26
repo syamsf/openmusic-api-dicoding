@@ -43,17 +43,21 @@ class AlbumsHandler {
     };
   }
 
-  async getSongByIdHandler(request) {
+  async getSongByIdHandler(request, h) {
     const { id } = request.params;
 
     const song = await this._service.getSongById(id);
 
-    return {
+    const response = h.response({
       status: 'success',
-      data: {
-        song,
-      },
-    };
+      data: { song: song.data },
+    });
+
+    if (song.isCached) {
+      response.header('X-Data-Source', 'cache');
+    }
+
+    return response;
   }
 
   async updateSongByIdHandler(request) {

@@ -6,8 +6,9 @@ const AuthorizationError = require('../../exceptions/AuthorizationError');
 const { mapDBToPlaylistModel } = require('../../utils');
 
 class PlaylistService {
-  constructor() {
+  constructor(cacheService) {
     this._pool = new Pool();
+    this._cacheService = cacheService;
   }
 
   async createPlaylist({ name, ownerId }) {
@@ -27,6 +28,13 @@ class PlaylistService {
   }
 
   async getPlaylist(ownerId) {
+    const playlistKey = `playlistByOwner:${ownerId}`;
+
+    const cachedData = await this._cacheService.get(playlistKey);
+    if (cachedData !== null) {
+      return { data: JSON.parse(cachedData), isCached: true };
+    }
+
     const query = {
       text: `SELECT t1.id, t1.name, t2.username FROM playlist t1
         LEFT JOIN users t2 ON t1.owner_id = t2.id
@@ -38,10 +46,17 @@ class PlaylistService {
 
     const result = await this._pool.query(query);
 
-    return result.rows.map(mapDBToPlaylistModel);
+    const expiredIn30Minutes = 30 * 60;
+    await this._cacheService.set(
+      playlistKey,
+      JSON.stringify(result.rows.map(mapDBToPlaylistModel)),
+      expiredIn30Minutes,
+    );
+
+    return { data: result.rows.map(mapDBToPlaylistModel), isCached: false };
   }
 
-  async deletePlaylist(playlistId) {
+  async deletePlaylist(playlistId, ownerId) {
     const query = {
       text: 'DELETE FROM playlist WHERE id = $1 RETURNING id',
       values: [playlistId],
@@ -52,6 +67,10 @@ class PlaylistService {
     if (!result.rowCount) {
       throw new NotFoundError('Failed to delete playlist. Id is not found.');
     }
+
+    await this._cacheService.delete(`playlist:${playlistId}`);
+    await this._cacheService.delete(`playlistByOwner:${ownerId}`);
+    await this._cacheService.delete(`playlistSongs:${playlistId}`);
   }
 
   async verifyPlaylistOwner(playlistId, userId, verifyCollaborator = false) {
@@ -84,6 +103,13 @@ class PlaylistService {
   }
 
   async getPlaylistById(playlistId) {
+    const playlistKey = `playlist:${playlistId}`;
+
+    const cachedData = await this._cacheService.get(playlistKey);
+    if (cachedData !== null) {
+      return { data: JSON.parse(cachedData), isCached: true };
+    }
+
     const query = {
       text: 'SELECT * FROM playlist WHERE id = $1',
       values: [playlistId],
@@ -95,7 +121,10 @@ class PlaylistService {
       throw new NotFoundError('Playlist not found.');
     }
 
-    return result.rows[0];
+    const expiredIn30Minutes = 30 * 60;
+    await this._cacheService.set(playlistKey, JSON.stringify(result.rows[0]), expiredIn30Minutes);
+
+    return { data: result.rows[0], isCached: false };
   }
 }
 

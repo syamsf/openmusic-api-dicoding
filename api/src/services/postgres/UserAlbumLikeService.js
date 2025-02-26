@@ -42,6 +42,13 @@ class UserAlbumLikeService {
   }
 
   async getLikesCount(albumId) {
+    const albumLikesKey = `albums_likes:${albumId}`;
+
+    const cachedData = await this._cacheService.get(albumLikesKey);
+    if (cachedData !== null) {
+      return { total: parseInt(cachedData, 10), isCached: true };
+    }
+
     const query = {
       text: 'SELECT COUNT(*) as total FROM user_album_likes WHERE album_id = $1',
       values: [albumId],
@@ -50,15 +57,8 @@ class UserAlbumLikeService {
     const result = await this._pool.query(query);
 
     const expiredIn30Minutes = 30 * 60;
-    const albumLikesKey = `albums_likes:${albumId}`;
-
-    const cachedData = await this._cacheService.get(albumLikesKey);
-    if (cachedData !== null) {
-      return { total: parseInt(cachedData, 10), isCached: true };
-    }
-
     const parsedTotal = parseInt(result.rows[0].total, 10);
-    await this._cacheService.set(`albums_likes:${albumId}`, parsedTotal, expiredIn30Minutes);
+    await this._cacheService.set(albumLikesKey, parsedTotal, expiredIn30Minutes);
 
     return { total: parsedTotal, isCached: false };
   }
